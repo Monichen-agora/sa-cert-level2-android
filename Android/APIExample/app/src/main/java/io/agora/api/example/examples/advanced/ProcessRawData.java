@@ -413,8 +413,13 @@ public class ProcessRawData extends BaseFragment implements View.OnClickListener
             return;
         }
         Log.e(TAG, "onRenderVideoFrame start blur");
-        Bitmap bmp = YUVUtils.blur(getContext(), YUVUtils.i420ToBitmap(width, height, rotation, bufferLength, data, yStride, uStride, vStride), 8f);
-        System.arraycopy(YUVUtils.bitmapToI420(width, height, bmp), 0, data, 0, bufferLength);
+        int[] temprgb = new int[bufferLength];
+        byte[] tempdata = new byte[bufferLength];
+        YUVUtils.decodeI420(temprgb, data, width, height);
+        YUVUtils.encodeI420(tempdata, temprgb, width, height);
+        System.arraycopy(tempdata, 0, data, 0, bufferLength);
+//        Bitmap bmp = YUVUtils.blur(getContext(), YUVUtils.i420ToBitmap(width, height, rotation, bufferLength, data, yStride, uStride, vStride), 8f);
+//        System.arraycopy(YUVUtils.bitmapToI420(width, height, bmp), 0, data, 0, bufferLength);
     }
 
     @Override

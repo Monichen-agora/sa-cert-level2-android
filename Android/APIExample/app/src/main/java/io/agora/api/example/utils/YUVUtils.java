@@ -40,13 +40,43 @@ public class YUVUtils {
 
                 // I420(YUV420p) -> YYYYYYYY UU VV
                 i420[yIndex++] = (byte) ((Y < 0) ? 0 : ((Y > 255) ? 255 : Y));
-                if (j % 2 == 0 && i % 2 == 0) {
+                if ((j & 0x1) == 0 && (i & 0x1) == 0) {
                     i420[uIndex++] = (byte) ((U < 0) ? 0 : ((U > 255) ? 255 : U));
                     i420[vIndex++] = (byte) ((V < 0) ? 0 : ((V > 255) ? 255 : V));
                 }
                 index++;
             }
         }
+    }
+
+    public static void decodeI420(int[] rgba, byte[] data, int width, int height) {
+        // Convert YUV to RGB
+        int frameSize = width*height;
+        int uIndex = frameSize;           // U statt index
+        int vIndex = frameSize * 5 / 4; // V start index: w*h*5/4
+
+        for (int i = 0; i < height; i++)
+            for (int j = 0; j < width; j++) {
+                int y = (0xff & ((int) data[i * width + j]));
+                int u = (0xff & ((int) data[uIndex + (i >> 1) * (width>>1) + (j>>1)]));
+                int v = (0xff & ((int) data[vIndex + (i >> 1) * (width>>1) + (j>>1)]));
+
+                y = y < 16 ? 16 : y;
+
+                int r = Math.round(1.164f * (y - 16) + 1.596f * (v - 128));
+                int g = Math.round(1.164f * (y - 16) - 0.813f * (v - 128) - 0.391f * (u - 128));
+                int b = Math.round(1.164f * (y - 16) + 2.018f * (u - 128));
+
+                r = r < 0 ? 0 : (r > 255 ? 255 : r);
+                g = g < 0 ? 0 : (g > 255 ? 255 : g);
+                b = b < 0 ? 0 : (b > 255 ? 255 : b);
+                // convert to negative
+                r = 250 - r;
+                g = 250 - g;
+                b = 250 - b;
+
+                rgba[i * width + j] = 0xff000000 + (r << 16) + (g << 8) + b;
+            }
     }
 
     public static void encodeNV21(byte[] yuv420sp, int[] argb, int width, int height) {
